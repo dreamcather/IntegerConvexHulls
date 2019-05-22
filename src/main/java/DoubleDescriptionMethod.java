@@ -26,6 +26,7 @@ public class DoubleDescriptionMethod {
         initializeBMatrix();
         initializePList();
         step();
+        initializePList();
         System.out.println(pList);
     }
 
@@ -39,24 +40,39 @@ public class DoubleDescriptionMethod {
 
     Vector<Rational> isRight() {
         initializePList();
+        List<Vector<Rational>> noIntList = new LinkedList<>();
         for (Vector<Rational> v : pList) {
             if (!isInteger(v))
-                return v;
+                noIntList.add(v);
         }
+        if(noIntList.size()==0)
         return null;
+        int k = new Random().nextInt(noIntList.size());
+        return noIntList.get(k);
     }
 
     public void step() {
         Vector<Rational> p = isRight();
+        int marker=0;
         while (p != null) {
-            System.out.println("Remove " + p);
-            Vector<Rational> cut = (generateCut(findAdjancent(p),p));
+            System.out.println(marker);
+            Matrix<Rational> adjancent = findAdjancent(p);
+            Vector<Rational> cut = generateCut(adjancent, p);
             addInequality(cut);
             initializePList();
             p = isRight();
-            System.out.println(pList);
-            System.out.println("+++++++++++++");
+            clear();
+            marker++;
+            if(marker==11){
+                System.out.println("here");
+            }
+
         }
+    }
+
+    private void printMatrix(Matrix<Rational> a){
+        System.out.println(a);
+        System.out.println("**************************");
     }
 
     private void initializeExpandedMatrix() {
@@ -70,6 +86,70 @@ public class DoubleDescriptionMethod {
         expandedMatrix = new Matrix(expandedMatrixValues);
     }
 
+    private boolean clearOne(Vector<Rational> vector) {
+        int counter=0;
+        for (Vector<Rational> point : pList) {
+            if (vector.multiply(point).equals(Rational.FACTORY.zero())) {
+                counter++;
+            }
+        }
+        if(counter<3)
+            return false;
+        return true;
+
+    }
+
+    private void clear(){
+        boolean flag = false;
+        do {
+            flag = false;
+            for(Vector<Rational> vector : bList){
+                if(!clearOne(vector)){
+                    flag = true;
+                    bList.remove(vector);
+                    inequalityCount--;
+                    break;
+                }
+            }
+        }while (flag);
+    }
+
+    private static int gcd(int a, int b) {
+        if (b == 0)
+            return Math.abs(a);
+        return gcd(b, a % b);
+    }
+
+    private static int lcm(int a, int b) {
+        return Math.abs(a*b)/gcd(b, a % b);
+    }
+
+    private int lcmList(List<Integer> list){
+        if(list.size()==1){
+            return list.get(0);
+        }
+        int res = lcm(list.get(0),list.get(1));
+        for(int i=2;i<list.size();i++){
+            res = lcm(res,list.get(i));
+        }
+        return res;
+    }
+
+
+    private int getDenominator(Matrix<Rational> matrix){
+        Set<Integer> set = new HashSet<>();
+        for(int i=1;i<=matrix.getRows();i++){
+            for(int j=1;j<=matrix.getCols();j++){
+                set.add(matrix.get(i,j).getDenominator().intValue());
+            }
+        }
+        List<Integer> intList =new LinkedList<>();
+        intList.addAll(set);
+
+        return lcmList(intList);
+
+    }
+
     private boolean isInteger(Vector<Rational> vector) {
         for (int i = 1; i <= dimension + 1; i++) {
             if (vector.getEntry(i).getDenominator().intValue() != 1) {
@@ -79,7 +159,7 @@ public class DoubleDescriptionMethod {
         return true;
     }
 
-    public Vector<Rational> generateCut(Matrix<Rational> m,Vector<Rational> p) {
+    public Vector<Rational> generateCut(Matrix<Rational> m, Vector<Rational> p) {
         Rational[][] rationals = new Rational[dimension][dimension];
         Rational[] rationals1 = new Rational[dimension];
         for (int i = 0; i < dimension; i++) {
@@ -91,15 +171,18 @@ public class DoubleDescriptionMethod {
             rationals1[i] = m.get(i + 1, dimension + 1);
         }
         Matrix<Rational> A = new Matrix<>(rationals);
-        int sumplay = A.det().abs().getDenominator().intValue();
-        A =A.multiply(Rational.FACTORY.get(sumplay));
+        int sumplay = getDenominator(A);
+        A = A.multiply(Rational.FACTORY.get(sumplay));
         A = A.transpose().multiply(Rational.FACTORY.get(-1));
         Vector<Rational> B = new Vector<>(rationals1).multiply(Rational.FACTORY.get(sumplay));
         Rational d = A.det().abs();
         Matrix<Rational> Adj = A.inverse().multiply(A.det());
-        Rational[] rationals2 = new Rational[] { Rational.FACTORY.zero(), Rational.FACTORY.zero(),Rational.FACTORY.zero() };
+        Rational[] rationals2 = new Rational[] {
+                Rational.FACTORY.zero(),
+                Rational.FACTORY.zero(),
+                Rational.FACTORY.zero() };
         Vector<Rational>[] tmp = new Vector[3];
-        for(int k=0;k<3;k++) {
+        for (int k = 0; k < 3; k++) {
             rationals2[k] = Rational.FACTORY.one();
             Vector<Rational> e = new Vector<>(rationals2);
             Vector<Rational> t = Adj.multiply(e);
@@ -123,18 +206,23 @@ public class DoubleDescriptionMethod {
             tmp[k] = new Vector<>(res);
         }
 
-        Vector<Rational> tt =p.multiply(Rational.FACTORY.get(-1));
-        tt.set(4,Rational.FACTORY.one());
+        Vector<Rational> tt = p.multiply(Rational.FACTORY.get(-1));
+        tt.set(4, Rational.FACTORY.one());
         Rational max = tmp[0].multiply(tt);
-        int number=0;
-        for(int i=1;i<3;i++){
+        int number = 0;
+        for (int i = 1; i < 3; i++) {
+
             Rational curent = tmp[i].multiply(tt);
-            if(curent.doubleValue()<max.doubleValue()){
-                max =curent;
-                number =i;
+            if (curent.doubleValue() < max.doubleValue()) {
+                max = curent;
+                number = i;
             }
         }
-        return tmp[number];
+        tmp[number].set(4, tmp[number].getEntry(4).negate());
+
+        System.out.println("AAAAAAAAAAAAAAAAAAAAAAA   "+p.getEntry(number+1));
+
+        return tmp[number].multiply(Rational.FACTORY.get(-1));
     }
 
     public Matrix<Rational> findAdjancent(Vector<Rational> point) {
@@ -180,9 +268,9 @@ public class DoubleDescriptionMethod {
         List<Vector<Rational>> U_minus = new LinkedList<>();
         List<Vector<Rational>> U_zero = new LinkedList<>();
         List<Vector<Rational>> U_supl = new LinkedList<>();
-//        for(int i=1;i<=dimension;i++){
-//            vector.set(i,vector.getEntry(i).negate());
-//        }
+        // for(int i=1;i<=dimension;i++){
+        // vector.set(i,vector.getEntry(i).negate());
+        // }
         uList.forEach(v -> {
             Rational r = vector.multiply(v);
             if (r.isZero()) {

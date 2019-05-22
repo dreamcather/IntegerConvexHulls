@@ -49,12 +49,14 @@ public class Geometry {
         Vector<Rational> res = new Vector<>(new Rational[] { A, B, C, D.negate() });
         res = res.divide(Rational.FACTORY.get(d));
 
-        Vector<Rational> expandVector = new Vector<>(new Rational[]{res.getEntry(1),res.getEntry(2),res.getEntry(3),Rational.FACTORY.one()});
+        Vector<Rational> expandedVector= new Vector<>(new Rational[]{control.getEntry(1),control.getEntry(2),control.getEntry(3),Rational.FACTORY.one()});
 
-        Rational orientation = res.multiply(expandVector);
+        Rational orientation = res.multiply(expandedVector);
         if (orientation.getNumerator().intValue() < 0) {
             res=res.multiply(Rational.FACTORY.get(-1));
         }
+        res.set(4,res.getEntry(4).negate());
+        res = res.multiply(Rational.FACTORY.get(-1));
 
         return res;
     }
