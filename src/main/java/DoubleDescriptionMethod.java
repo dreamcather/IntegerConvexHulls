@@ -24,6 +24,7 @@ public class DoubleDescriptionMethod {
         uList = new LinkedList<>();
         initializeExpandedMatrix();
         initializeBMatrix();
+        addInequality(new Vector<Rational>(new Rational[]{Rational.FACTORY.get(-2),Rational.FACTORY.get(-4),Rational.FACTORY.get(-5),Rational.FACTORY.get(6)}));
         initializePList();
         step();
         initializePList();
@@ -32,11 +33,16 @@ public class DoubleDescriptionMethod {
 
     private void initializePList() {
         pList = new LinkedList<>();
-        uList.forEach(v -> {
+        for(Vector<Rational> v: uList){
+            if(v.getEntry(dimension+1).equals(Rational.FACTORY.zero())){
+                break;
+            }
             Vector<Rational> current = v.divide(v.getEntry(dimension + 1));
             pList.add(current);
-        });
+        }
     }
+
+
 
     Vector<Rational> isRight() {
         initializePList();
@@ -53,19 +59,14 @@ public class DoubleDescriptionMethod {
 
     public void step() {
         Vector<Rational> p = isRight();
-        int marker=0;
         while (p != null) {
-            System.out.println(marker);
             Matrix<Rational> adjancent = findAdjancent(p);
             Vector<Rational> cut = generateCut(adjancent, p);
             addInequality(cut);
             initializePList();
+            System.out.println(pList);
             p = isRight();
             clear();
-            marker++;
-            if(marker==11){
-                System.out.println("here");
-            }
 
         }
     }
@@ -220,8 +221,6 @@ public class DoubleDescriptionMethod {
         }
         tmp[number].set(4, tmp[number].getEntry(4).negate());
 
-        System.out.println("AAAAAAAAAAAAAAAAAAAAAAA   "+p.getEntry(number+1));
-
         return tmp[number].multiply(Rational.FACTORY.get(-1));
     }
 
@@ -233,6 +232,8 @@ public class DoubleDescriptionMethod {
             if (curentRes.isZero()) {
                 vectors[k] = bList.get(i);
                 k++;
+                if(k==3)
+                    break;
             }
         }
         return new Matrix<>(vectors);
@@ -268,9 +269,6 @@ public class DoubleDescriptionMethod {
         List<Vector<Rational>> U_minus = new LinkedList<>();
         List<Vector<Rational>> U_zero = new LinkedList<>();
         List<Vector<Rational>> U_supl = new LinkedList<>();
-        // for(int i=1;i<=dimension;i++){
-        // vector.set(i,vector.getEntry(i).negate());
-        // }
         uList.forEach(v -> {
             Rational r = vector.multiply(v);
             if (r.isZero()) {
