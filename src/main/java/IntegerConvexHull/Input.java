@@ -1,3 +1,6 @@
+package IntegerConvexHull;
+
+import IntegerConvexHull.doubleDescriptionMethod.MatrixHelper;
 import org.jlinalg.Matrix;
 import org.jlinalg.Vector;
 import org.jlinalg.rational.Rational;

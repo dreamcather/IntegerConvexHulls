@@ -1,4 +1,4 @@
-package convexHull;
+package IntegerConvexHull.convexHull;
 
 import org.jlinalg.Vector;
 import org.jlinalg.rational.Rational;

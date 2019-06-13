@@ -1,6 +1,7 @@
-package convexHull;
+package IntegerConvexHull.convexHull;
 
 import org.jlinalg.Matrix;
+import org.jlinalg.Vector;
 import org.jlinalg.rational.Rational;
 
 import java.io.FileWriter;
@@ -12,7 +13,7 @@ public class ConvexHull {
     TypeVertex vstart = null;
     TypeEdge estart = null;
     TypeFace fstart = null;
-    int vcol = 0;
+    public int vcol = 0;
     int ecol = 0;
     int fcol = 0;
 
@@ -173,10 +174,7 @@ public class ConvexHull {
         double vol = new Matrix<Rational>(mas).det().doubleValue();
         if (vol > 0.0005)
             return true;
-        else if (vol < -0.0005)
-            return false;
-        else
-            return true;
+        else return !(vol < -0.0005);
     }
 
     void Swap(TypeEdge x, TypeEdge y) {
@@ -269,7 +267,7 @@ public class ConvexHull {
                 new_edge[i] = MakeNullEdge();
                 new_edge[i].setEndpts(e.getEndpts(i), 0);
                 new_edge[i].setEndpts(p, 1);
-                e.getEndpts(i).setDuplicate((Object) new_edge[i]);
+                e.getEndpts(i).setDuplicate(new_edge[i]);
             }
         }
         new_face = MakeNullFace();
@@ -280,7 +278,7 @@ public class ConvexHull {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 if (new_edge[i].getAdjface(j) == null) {
-                    new_edge[i].setAdjface((Object) new_face, j);
+                    new_edge[i].setAdjface(new_face, j);
                     break;
                 }
             }
@@ -311,7 +309,7 @@ public class ConvexHull {
                 e.setDeleted(true);
             } else {
                 if ((((TypeFace) e.getAdjface(0)).getVisible()) || (((TypeFace) e.getAdjface(1)).getVisible())) {
-                    e.setNewface((Object) (MakeConeFace(e, p)));
+                    e.setNewface(MakeConeFace(e, p));
                 }
             }
             e = e.getNext();
@@ -330,6 +328,7 @@ public class ConvexHull {
         if (v == vstart) {
             vstart = next;
         }
+        vcol--;
     }
 
     void DeleteEdge(TypeEdge e) {
@@ -340,6 +339,7 @@ public class ConvexHull {
         if (e == estart) {
             estart = next;
         }
+        ecol--;
     }
 
     void DeleteFace(TypeFace f) {
@@ -350,6 +350,7 @@ public class ConvexHull {
         if (f == fstart) {
             fstart = next;
         }
+        fcol--;
     }
 
     void CleanFaces() {
@@ -375,7 +376,7 @@ public class ConvexHull {
         TypeEdge t;
         e = estart;
         do {
-            if (((TypeFace) e.getNewface()) != null) {
+            if (e.getNewface() != null) {
                 if (((TypeFace) e.getAdjface(0)).getVisible()) {
                     e.setAdjface(e.getNewface(), 0);
                 } else {
@@ -476,6 +477,68 @@ public class ConvexHull {
                 writer.append('\n');
                 writer.write("endfacet");
                 writer.append('\n');
+                f = f.next;
+            } while (f != fstart);
+
+            writer.flush();
+        } catch (IOException ex) {
+
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public TypeFace[] getFaces() {
+        TypeFace f = fstart;
+        TypeFace[] typeFaces = new TypeFace[fcol];
+        int k = 0;
+        do {
+            typeFaces[k] = f;
+            k++;
+            f = f.next;
+        } while (f != fstart);
+        return typeFaces;
+    }
+
+    public Vector<Rational>[] getVertex() {
+        TypeVertex v = vstart;
+        Vector<Rational>[] typeVertex = new Vector[vcol];
+        int k = 0;
+        do {
+            typeVertex[k] = v.toRational();
+            k++;
+            v = v.getNext();
+        } while (v != vstart);
+        return typeVertex;
+    }
+
+    private void writeString(String str, FileWriter writer) throws IOException {
+        writer.write(str);
+        writer.append('\n');
+
+    }
+
+    private void writeVertex(TypeVertex vertex, FileWriter writer) throws IOException {
+        String res = vertex.getCoordinates()[0].doubleValue() + " " + vertex.getCoordinates()[1].doubleValue() +
+                " " + vertex.getCoordinates()[2].doubleValue();
+        writeString(res, writer);
+    }
+
+    private void writeFace(TypeFace face, FileWriter writer) throws IOException {
+        writeVertex(face.vertex[0], writer);
+        writeVertex(face.vertex[1], writer);
+        writeVertex(face.vertex[2], writer);
+        writeString("", writer);
+    }
+
+    public void save(String path) {
+        try (FileWriter writer = new FileWriter(path)) {
+            writeString(String.valueOf(fcol), writer);
+            writeString("", writer);
+
+            TypeFace f = fstart;
+
+            do {
+                writeFace(f, writer);
                 f = f.next;
             } while (f != fstart);
 

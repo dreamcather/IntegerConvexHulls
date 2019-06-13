@@ -1,47 +1,92 @@
+package IntegerConvexHull;
 
+import IntegerConvexHull.convexHull.ConvexHull;
+import IntegerConvexHull.convexHull.TypeFace;
+import IntegerConvexHull.convexHull.TypeVertex;
+import IntegerConvexHull.doubleDescriptionMethod.MatrixHelper;
 import org.jlinalg.Matrix;
 import org.jlinalg.Vector;
 import org.jlinalg.rational.Rational;
 
 import java.util.*;
 
-public class DoubleDescriptionMethod {
-    private final Matrix<Rational> aMatrix;
-    private final Vector<Rational> bVector;
-    private final int dimension;
+public class DoubleDescriptionMethod2 {
+    private Matrix<Rational> aMatrix;
+    private Vector<Rational> bVector;
+    private int dimension;
     private int inequalityCount;
     private Matrix<Rational> expandedMatrix;
+    private ConvexHull convexHull;
     Matrix<Rational> bMatrix;
     List<Vector<Rational>> uList;
     List<Vector<Rational>> pList;
     List<Vector<Rational>> bList;
+    List<Vector<Rational>> aList;
+    Vector<Rational>[] vertices;
 
-    public DoubleDescriptionMethod(Matrix<Rational> aMatrix, Vector<Rational> bVector, int dimension) {
+    public DoubleDescriptionMethod2(Matrix<Rational> aMatrix, Vector<Rational> bVector, int dimension, Vector<Rational>[] vertices) {
         this.aMatrix = aMatrix;
         this.bVector = bVector;
         inequalityCount = aMatrix.getRows();
         this.dimension = dimension;
+        this.vertices = vertices;
         uList = new LinkedList<>();
         initializeExpandedMatrix();
+        //check();
         initializeBMatrix();
-        addInequality(new Vector<Rational>(new Rational[]{Rational.FACTORY.get(-2),Rational.FACTORY.get(-4),Rational.FACTORY.get(-5),Rational.FACTORY.get(6)}));
+        addInequality();
         initializePList();
+        System.out.println(pList.size());
+        uList = Arrays.asList(vertices);
         step();
         initializePList();
-        System.out.println(pList);
+
+    }
+
+    private void check() {
+        for (int i = 0; i < expandedMatrix.getRows(); i++) {
+            for (int j = 0; j < vertices.length; j++) {
+                System.out.print(expandedMatrix.getRow(i + 1).multiply(vertices[j]) + "   ");
+            }
+            System.out.println();
+        }
+    }
+
+    public TypeFace[] VertexConverter() {
+        List<TypeVertex> list = new LinkedList<>();
+        pList.forEach(v -> {
+            list.add(transfer(v));
+        });
+        convexHull = new ConvexHull(list, 3);
+        TypeFace[] faces = convexHull.getFaces();
+        return faces;
+
+    }
+
+    private void addInequality() {
+        while (aList.size() != 0) {
+            Vector<Rational> rationalVector = aList.get(0);
+            addInequality(rationalVector);
+            aList.remove(0);
+            initializePList();
+        }
+    }
+
+
+    private TypeVertex transfer(Vector<Rational> r) {
+        return new TypeVertex(3, r.getEntry(1), r.getEntry(2), r.getEntry(3));
     }
 
     private void initializePList() {
         pList = new LinkedList<>();
-        for(Vector<Rational> v: uList){
-            if(v.getEntry(dimension+1).equals(Rational.FACTORY.zero())){
+        for (Vector<Rational> v : uList) {
+            if (v.getEntry(dimension + 1).equals(Rational.FACTORY.zero())) {
                 break;
             }
             Vector<Rational> current = v.divide(v.getEntry(dimension + 1));
             pList.add(current);
         }
     }
-
 
 
     Vector<Rational> isRight() {
@@ -51,8 +96,8 @@ public class DoubleDescriptionMethod {
             if (!isInteger(v))
                 noIntList.add(v);
         }
-        if(noIntList.size()==0)
-        return null;
+        if (noIntList.size() == 0)
+            return null;
         int k = new Random().nextInt(noIntList.size());
         return noIntList.get(k);
     }
@@ -71,7 +116,7 @@ public class DoubleDescriptionMethod {
         }
     }
 
-    private void printMatrix(Matrix<Rational> a){
+    private void printMatrix(Matrix<Rational> a) {
         System.out.println(a);
         System.out.println("**************************");
     }
@@ -88,63 +133,69 @@ public class DoubleDescriptionMethod {
     }
 
     private boolean clearOne(Vector<Rational> vector) {
-        int counter=0;
+        int counter = 0;
         for (Vector<Rational> point : pList) {
             if (vector.multiply(point).equals(Rational.FACTORY.zero())) {
                 counter++;
             }
         }
-        if(counter<3)
+        if (counter < 3)
             return false;
         return true;
 
     }
 
-    private void clear(){
+    private void clear() {
         boolean flag = false;
         do {
             flag = false;
-            for(Vector<Rational> vector : bList){
-                if(!clearOne(vector)){
+            for (Vector<Rational> vector : bList) {
+                if (!clearOne(vector)) {
                     flag = true;
                     bList.remove(vector);
                     inequalityCount--;
                     break;
                 }
             }
-        }while (flag);
+        } while (flag);
     }
 
     private static int gcd(int a, int b) {
-        if (b == 0)
-            return Math.abs(a);
-        return gcd(b, a % b);
+        if (a >= b) {
+            if (b == 0)
+                return Math.abs(a);
+            return gcd(b, a % b);
+        } else {
+            if (a == 0)
+                return Math.abs(b);
+            return gcd(a, b % a);
+        }
     }
 
     private static int lcm(int a, int b) {
-        return Math.abs(a*b)/gcd(b, a % b);
+        return Math.abs(a * b) / gcd(b, a % b);
     }
 
-    private int lcmList(List<Integer> list){
-        if(list.size()==1){
+    private int lcmList(List<Integer> list) {
+        if (list.size() == 1) {
             return list.get(0);
         }
-        int res = lcm(list.get(0),list.get(1));
-        for(int i=2;i<list.size();i++){
-            res = lcm(res,list.get(i));
+        int res = lcm(list.get(0), list.get(1));
+        for (int i = 2; i < list.size(); i++) {
+            res = lcm(res, list.get(i));
         }
         return res;
     }
 
 
-    private int getDenominator(Matrix<Rational> matrix){
+    private int getDenominator(Matrix<Rational> matrix) {
         Set<Integer> set = new HashSet<>();
-        for(int i=1;i<=matrix.getRows();i++){
-            for(int j=1;j<=matrix.getCols();j++){
-                set.add(matrix.get(i,j).getDenominator().intValue());
+        for (int i = 1; i <= matrix.getRows(); i++) {
+            for (int j = 1; j <= matrix.getCols(); j++) {
+                set.add(matrix.get(i, j).getDenominator().intValue());
             }
         }
-        List<Integer> intList =new LinkedList<>();
+        List<Integer> intList = new LinkedList<>();
         intList.addAll(set);
 
         return lcmList(intList);
@@ -178,10 +229,10 @@ public class DoubleDescriptionMethod {
         Vector<Rational> B = new Vector<>(rationals1).multiply(Rational.FACTORY.get(sumplay));
         Rational d = A.det().abs();
         Matrix<Rational> Adj = A.inverse().multiply(A.det());
-        Rational[] rationals2 = new Rational[] {
+        Rational[] rationals2 = new Rational[]{
                 Rational.FACTORY.zero(),
                 Rational.FACTORY.zero(),
-                Rational.FACTORY.zero() };
+                Rational.FACTORY.zero()};
         Vector<Rational>[] tmp = new Vector[3];
         for (int k = 0; k < 3; k++) {
             rationals2[k] = Rational.FACTORY.one();
@@ -232,7 +283,7 @@ public class DoubleDescriptionMethod {
             if (curentRes.isZero()) {
                 vectors[k] = bList.get(i);
                 k++;
-                if(k==3)
+                if (k == 3)
                     break;
             }
         }
@@ -256,10 +307,13 @@ public class DoubleDescriptionMethod {
     }
 
     boolean isAdjacent(Vector<Rational> v, Vector<Rational> u) {
-        Set a1 = getZ(v);
-        Set a2 = getZ(u);
-        a1.removeAll(a2);
-        if (a1.size() == 1)
+        Set<Integer> a1 = getZ(v);
+        Set<Integer> a2 = getZ(u);
+        a1.retainAll(a2);
+        List<Vector<Rational>> adjancentList = new LinkedList<>();
+        a1.forEach(i -> adjancentList.add(bList.get(i)));
+        Matrix<Rational> rationalMatrix = MatrixHelper.matrixFromList(adjancentList);
+        if (rationalMatrix.rank() == 1)
             return true;
         return false;
     }
@@ -285,7 +339,7 @@ public class DoubleDescriptionMethod {
             U_minus.forEach(minus -> {
                 if (isAdjacent(plus, minus)) {
                     Vector<Rational> vv = minus.multiply(vector.multiply(plus))
-                                               .subtract(plus.multiply(vector.multiply(minus)));
+                            .subtract(plus.multiply(vector.multiply(minus)));
                     U_supl.add(vv);
                 }
             });
@@ -301,6 +355,10 @@ public class DoubleDescriptionMethod {
     private void initializeBMatrix() {
         bMatrix = set3(inequalityCount, expandedMatrix);
         bList = new LinkedList<>();
+        aList = new LinkedList<>();
+        for (int i = 0; i < expandedMatrix.getRows(); i++) {
+            aList.add(expandedMatrix.getRow(i + 1));
+        }
         for (int i = 0; i <= dimension; i++) {
             bList.add(bMatrix.getRow(i + 1));
         }

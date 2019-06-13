@@ -1,4 +1,4 @@
-package convexHull;
+package IntegerConvexHull.convexHull;
 
 public class TypeFace {
 

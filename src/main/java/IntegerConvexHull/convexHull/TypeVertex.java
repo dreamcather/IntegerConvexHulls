@@ -1,5 +1,6 @@
-package convexHull;
+package IntegerConvexHull.convexHull;
 
+import org.jlinalg.Vector;
 import org.jlinalg.rational.Rational;
 
 public class TypeVertex {
@@ -20,6 +21,17 @@ public class TypeVertex {
         onhull = false;
         mark = false;
         coordinates = new Rational[dimension];
+    }
+    public TypeVertex(int dimension,Rational x,Rational y ,Rational z)
+    {
+        this.dimension = dimension;
+        duplicate = null;
+        onhull = false;
+        mark = false;
+        coordinates = new Rational[dimension];
+        coordinates[0]=x;
+        coordinates[1] = y;
+        coordinates[2] = z;
     }
 
     public TypeVertex(TypeVertex tmp)
@@ -97,6 +109,10 @@ public class TypeVertex {
 
     public void setDuplicate(Object duplicate) {
         this.duplicate = duplicate;
+    }
+
+    public Vector<Rational> toRational(){
+        return new Vector<>(coordinates);
     }
 
     void setProcessed(boolean tmp)
